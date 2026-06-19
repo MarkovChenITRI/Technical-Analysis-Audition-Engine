@@ -1,0 +1,8 @@
+[project]
+name = "technical-analysis-audition-engine"
+version = "0.1.0"
+description = "台股量化策略海選引擎：Sharpe 排名 + 融資融券 + 橫盤蓄積過濾"
+requires-python = ">=3.12"
+
+[tool.uv]
+dev-dependencies = []

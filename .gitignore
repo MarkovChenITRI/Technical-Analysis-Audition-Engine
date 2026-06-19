@@ -1,0 +1,10 @@
+/.cache
+.venv/
+__pycache__/
+*.py[cod]
+
+# 參照用子專案（獨立 git repo，不納入本專案版控）
+/Keep-Buying-Audition-Engine/
+
+# GCP 服務帳戶金鑰（內容已存進 GitHub Secrets，不得入庫）
+eternal-insight-423516-m3-*.json

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TA Audition Engine — 台股量化海選</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <link rel="stylesheet" href="/static/style.css?v=2" />
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────── -->
+<header class="app-header">
+  <div class="header-left">
+    <span class="logo">🇹🇼 TA Audition Engine</span>
+    <span class="subtitle">台股量化海選引擎 — Sharpe + 融資 + 橫盤蓄積</span>
+  </div>
+  <div class="header-status">
+    <span class="status-dot" id="status-dot"></span>
+    <span id="status-text"></span>
+  </div>
+</header>
+
+<!-- ── Main ────────────────────────────────────────────────────────────── -->
+<main class="app-main">
+
+  <!-- ===== 上半：權益曲線 + 產業排名 ===== -->
+  <section class="chart-section">
+    <div class="chart-panel">
+      <div class="chart-toolbar">
+        <span class="chart-toolbar-label">策略權益曲線 vs 台灣加權指數</span>
+        <span id="market-regime-badge" style="display:none;margin-left:8px;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;"></span>
+        <span id="chart-meta" style="margin-left:auto;font-size:10px;color:var(--text-muted);"></span>
+      </div>
+      <div id="equity-chart" style="height:260px;background:var(--bg-base);"></div>
+    </div>
+    <aside class="industry-panel">
+      <div class="panel-title">產業持倉排名</div>
+      <div id="industry-list">
+        <p class="empty-state">執行回測後顯示</p>
+      </div>
+    </aside>
+  </section>
+
+  <!-- ===== 下半：配置面板 + 回測結果 ===== -->
+  <section class="backtest-section">
+
+    <!-- 左：配置面板 -->
+    <aside class="section-sidebar">
+      <div class="section-title">部署配置</div>
+
+      <!-- Tab 切換 -->
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('tab-base')">基本設定</button>
+        <button class="tab-btn" onclick="switchTab('tab-buy')">買進條件</button>
+        <button class="tab-btn" onclick="switchTab('tab-sell')">賣出條件</button>
+        <button class="tab-btn" onclick="switchTab('tab-risk')">市場機制</button>
+      </div>
+
+      <!-- ── Tab 1：基本設定 ── -->
+      <div id="tab-base" class="tab-panel active">
+        <fieldset class="form-group">
+          <legend>TradingView（台股觀察清單）</legend>
+          <div class="form-row">
+            <label>Session ID</label>
+            <input type="text" id="tv-session-id" placeholder="sessionid cookie" />
+          </div>
+          <div class="form-row">
+            <label>Watchlist ID</label>
+            <input type="text" id="tv-watchlist-id" placeholder="台股清單 ID" />
+          </div>
+          <div class="form-row">
+            <label>到期日</label>
+            <input type="date" id="tv-expires-at" />
+          </div>
+        </fieldset>
+
+        <fieldset class="form-group">
+          <legend>LINE 推播</legend>
+          <div class="form-row">
+            <label>Token</label>
+            <input type="text" id="line-token" placeholder="Channel Access Token" />
+          </div>
+          <div class="form-row">
+            <label>Group ID</label>
+            <input type="text" id="line-group" placeholder="LINE 群組 ID" />
+          </div>
+        </fieldset>
+
+        <fieldset class="form-group">
+          <legend>回測策略（市場固定：台股）</legend>
+          <div class="form-row">
+            <label>初始資金</label>
+            <input type="number" id="initial-capital" step="100000" />
+          </div>
+          <div class="form-row">
+            <label>每檔投入</label>
+            <input type="number" id="amount-per-stock" step="10000" />
+          </div>
+          <div class="form-row">
+            <label>最大持倉</label>
+            <input type="number" id="max-positions" min="1" max="50" />
+          </div>
+          <div class="form-row">
+            <label>起始日</label>
+            <input type="date" id="start-date" />
+          </div>
+          <div class="form-row">
+            <label>結束日</label>
+            <input type="date" id="end-date" />
+          </div>
+          <div class="form-row">
+            <label>再平衡頻率</label>
+            <select id="rebalance-freq">
+              <option value="daily">每日</option>
+              <option value="weekly">每週</option>
+              <option value="monthly">每月</option>
+            </select>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- ── Tab 2：買進條件 ── -->
+      <div id="tab-buy" class="tab-panel">
+        <fieldset class="form-group">
+          <legend>Sharpe 篩選</legend>
+
+          <div class="cond-row">
+            <label class="toggle-row">
+              <input type="checkbox" id="buy-sharpe-rank-enabled" />
+              <span class="toggle-track"></span>
+              <span class="toggle-label">Sharpe 排名前 N</span>
+            </label>
+            <div class="cond-param">
+              <label>Top N</label>
+              <input type="number" id="buy-sharpe-rank-top_n" min="1" max="50" step="1" style="width:60px" />
+            </div>
+          </div>
+
+          <div class="cond-row">
+            <label class="toggle-row">
+              <input type="checkbox" id="buy-sharpe-threshold-enabled" />
+              <span class="toggle-track"></span>
+              <span class="toggle-label">Sharpe 門檻</span>
+            </label>
+            <div class="cond-param">
+              <label>≥</label>
+              <input type="number" id="buy-sharpe-threshold-threshold" min="0" max="5" step="0.1" style="width:60px" />
+            </div>
+          </div>
+
+          <div class="cond-row">
+            <label class="toggle-row">
+              <input type="checkbox" id="buy-growth-streak-enabled" />
+              <span class="toggle-track"></span>
+              <span class="toggle-label">連漲 N 天 + 分位</span>
+            </label>
+            <div class="cond-param">
+              <label>天數</label>
+              <input type="number" id="buy-growth-streak-days" min="1" max="10" step="1" style="width:50px" />
+              <label>前 %</label>
+              <input type="number" id="buy-growth-streak-percentile" min="0" max="100" step="5" style="width:50px" />
+            </div>
+          </div>
+
+          <div class="cond-row">
+            <label class="toggle-row">
+              <input type="checkbox" id="buy-sort-sharpe-enabled" />
+              <span class="toggle-track"></span>
+              <span class="toggle-label">依 Sharpe 排序選股（趨勢型）</span>
+            </label>
+          </div>
+
+          <div class="cond-row">
+            <label class="toggle-row">
+              <input type="checkbox" id="buy-sort-margin-enabled" />
+              <span class="toggle-track"></span>
+              <span class="toggle-label">依融資布局強度排序（成長型）</span>
+            </label>
+            <div class="cond-param">
+              <label>近 N 日</label>
+              <input type="number" id="buy-sort-margin-days" min="1" max="20" step="1" style="width:50px" />
+            </div>
+          </div>
+          <div class="cond-hint">
+            趨勢型：Sharpe 最高者優先，融資作確認 ｜ 成長型：融資增幅最大者優先，早於價格表現<br>
+            ⚠️ 兩者互斥，同時開啟時「成長型」優先
+          </div>
+        </fieldset>
+
+        <fieldset class="form-group">
+          <legend>台股特色條件</legend>
+
+          <div class="cond-row">
+            <label class="toggle-row">
+              <input type="checkbox" id="buy-margin-net-long-enabled" />
+              <span class="toggle-track"></span>
+              <span class="toggle-label">融資淨增（散戶動能）</span>
+            </label>
+            <div class="cond-param">
+              <label>近 N 日</label>
+              <input type="number" id="buy-margin-net-long-days" min="1" max="20" step="1" style="width:50px" />
+              <label>增幅≥</label>
+              <input type="number" id="buy-margin-net-long-min_avg_change" min="-1" max="1" step="0.01" style="width:60px" />
+            </div>
+          </div>
+          <div class="cond-hint">融資餘額近 N 日平均增減率 ≥ 設定值（0 = 不下降即可）</div>
+
+          <div class="cond-row">
+            <label class="toggle-row">
+              <input type="checkbox" id="buy-no-parabolic-enabled" />
+              <span class="toggle-track"></span>
+              <span class="toggle-label">無爆漲（橫盤蓄積）</span>
+            </label>
+            <div class="cond-param">
+              <label>回看</label>
+              <input type="number" id="buy-no-parabolic-lookback" min="3" max="30" step="1" style="width:50px" />
+              <label>日，漲幅 &lt;</label>
+              <input type="number" id="buy-no-parabolic-max_gain" min="0.05" max="0.5" step="0.01" style="width:60px" />
+            </div>
+          </div>
+          <div class="cond-hint">近 N 日累積漲幅未超過設定值（0.15 = 15%），避免追高</div>
+        </fieldset>
+
+        <fieldset class="form-group">
+          <legend>再平衡策略</legend>
+          <div class="form-row">
+            <label>類型</label>
+            <select id="rebalance-type">
+              <option value="delayed">延遲（Sharpe 穩定）</option>
+              <option value="immediate">立即</option>
+              <option value="batch">批次</option>
+              <option value="concentrated">集中持倉</option>
+              <option value="none">關閉</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>候選 Top N</label>
+            <input type="number" id="rebalance-top_n" min="1" max="30" step="1" />
+          </div>
+          <div class="form-row">
+            <label>Sharpe 門檻</label>
+            <input type="number" id="rebalance-sharpe_threshold" min="0" max="5" step="0.1" />
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- ── Tab 3：賣出條件 ── -->
+      <div id="tab-sell" class="tab-panel">
+        <fieldset class="form-group">
+          <legend>Sharpe 出場</legend>
+
+          <div class="cond-row">
+            <label class="toggle-row">
+              <input type="checkbox" id="sell-sharpe-fail-enabled" />
+              <span class="toggle-track"></span>
+              <span class="toggle-label">Sharpe 連續掉出前 N</span>
+            </label>
+            <div class="cond-param">
+              <label>期數</label>
+              <input type="number" id="sell-sharpe-fail-periods" min="1" max="10" step="1" style="width:50px" />
+              <label>Top N</label>
+              <input type="number" id="sell-sharpe-fail-top_n" min="1" max="50" step="1" style="width:50px" />
+            </div>
+          </div>
+
+          <div class="cond-row">
+            <label class="toggle-row">
+              <input type="checkbox" id="sell-drawdown-enabled" />
+              <span class="toggle-track"></span>
+              <span class="toggle-label">停損（台股建議 10%）</span>
+            </label>
+            <div class="cond-param">
+              <label>≥</label>
+              <input type="number" id="sell-drawdown-threshold" min="0.05" max="0.5" step="0.01" style="width:60px" />
+              <span style="color:var(--text-muted);font-size:11px">（0.10 = 10%）</span>
+            </div>
+          </div>
+
+          <div class="cond-row">
+            <label class="toggle-row">
+              <input type="checkbox" id="sell-growth-fail-enabled" />
+              <span class="toggle-track"></span>
+              <span class="toggle-label">連跌 N 天賣出</span>
+            </label>
+            <div class="cond-param">
+              <label>天數</label>
+              <input type="number" id="sell-growth-fail-days" min="1" max="20" step="1" style="width:50px" />
+            </div>
+          </div>
+
+          <div class="cond-row">
+            <label class="toggle-row">
+              <input type="checkbox" id="sell-not-selected-enabled" />
+              <span class="toggle-track"></span>
+              <span class="toggle-label">連續未入選 N 期賣出</span>
+            </label>
+            <div class="cond-param">
+              <label>期數</label>
+              <input type="number" id="sell-not-selected-periods" min="1" max="10" step="1" style="width:50px" />
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="form-group">
+          <legend>台股特色賣出</legend>
+
+          <div class="cond-row">
+            <label class="toggle-row">
+              <input type="checkbox" id="sell-margin-collapse-enabled" />
+              <span class="toggle-track"></span>
+              <span class="toggle-label">融資崩潰（資金快速撤退）</span>
+            </label>
+            <div class="cond-param">
+              <label>近 N 日</label>
+              <input type="number" id="sell-margin-collapse-days" min="1" max="10" step="1" style="width:50px" />
+              <label>增幅≤</label>
+              <input type="number" id="sell-margin-collapse-threshold" min="-1" max="0" step="0.05" style="width:60px" />
+            </div>
+          </div>
+          <div class="cond-hint">融資近 N 日平均減少超過設定值時強制賣出（-0.30 = 減少30%）</div>
+        </fieldset>
+      </div>
+
+      <!-- ── Tab 4：市場機制 ── -->
+      <div id="tab-risk" class="tab-panel">
+        <fieldset class="form-group">
+          <legend>市場方向過濾（絕對動量）</legend>
+          <div class="cond-row">
+            <label class="toggle-row">
+              <input type="checkbox" id="mf-enabled" />
+              <span class="toggle-track"></span>
+              <span class="toggle-label">TWII 200 日均線過濾</span>
+            </label>
+          </div>
+          <div class="cond-hint">
+            TWII 收盤低於 200MA 時，停止一切新買進（僅執行賣出）。<br>
+            依據：空頭市場中連前幾名的 Sharpe 也是相對最強的弱勢股，<br>
+            重複被 10% 停損踢出會快速消耗資本。
+          </div>
+          <div class="cond-row" style="margin-top:8px">
+            <label>MA 窗口（日）</label>
+            <input type="number" id="mf-ma_window" min="50" max="500" step="10" style="width:70px" />
+          </div>
+        </fieldset>
+
+        <fieldset class="form-group">
+          <legend>停損後重新入場條件</legend>
+          <div class="cond-row">
+            <label class="toggle-row">
+              <input type="checkbox" id="slr-enabled" />
+              <span class="toggle-track"></span>
+              <span class="toggle-label">價格恢復才允許重買</span>
+            </label>
+          </div>
+          <div class="cond-hint">
+            被 10% 停損出場的標的，必須收盤站回停損觸發價格以上，<br>
+            方可再次納入買進候選。避免連續買進下跌中的標的。
+          </div>
+        </fieldset>
+
+        <fieldset class="form-group">
+          <legend>交易費用</legend>
+          <div class="form-row">
+            <label>買進費率</label>
+            <input type="number" id="fee-buy-rate" min="0" max="0.05" step="0.0001" style="width:80px" />
+            <span class="cond-hint" style="margin:0 0 0 4px">（0.0015 = 0.15%）</span>
+          </div>
+          <div class="form-row">
+            <label>賣出費率</label>
+            <input type="number" id="fee-sell-rate" min="0" max="0.05" step="0.0001" style="width:80px" />
+            <span class="cond-hint" style="margin:0 0 0 4px">（0.0045 = 手續費 + 證交稅）</span>
+          </div>
+          <div class="form-row">
+            <label>最低手續費</label>
+            <input type="number" id="fee-min-fee" min="0" max="500" step="10" style="width:80px" />
+            <span class="cond-hint" style="margin:0 0 0 4px">TWD</span>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="form-actions">
+        <button id="run-btn" class="btn-primary" onclick="runBacktest()">執行回測</button>
+        <div class="form-actions-row">
+          <button id="deploy-btn" class="btn-secondary" onclick="deployConfig()">儲存策略</button>
+          <button id="reload-btn" class="btn-secondary" onclick="reloadConfig()">重新載入</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 右：回測結果 -->
+    <div class="results-area">
+
+      <!-- 績效指標 -->
+      <div class="metrics-section">
+        <div id="metrics-grid" class="metrics-grid">
+          <p class="placeholder-text">設定參數後點擊「執行回測」</p>
+        </div>
+      </div>
+
+      <!-- 持倉清單 -->
+      <div class="holdings-section">
+        <div class="card-title">當前持倉</div>
+        <table id="holdings-table">
+          <thead><tr>
+            <th>標的</th><th>產業</th><th>股數</th>
+            <th>均價</th><th>現價</th><th>市值(TWD)</th><th>損益%</th><th>買入日</th>
+          </tr></thead>
+          <tbody><tr><td colspan="8" class="placeholder-text">—</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- 近期交易 -->
+      <div class="equity-section">
+        <div class="equity-label" style="display:flex;align-items:center;gap:12px">
+          <span id="trades-label">近期交易</span>
+          <div class="trades-pager" id="trades-pager" style="display:none">
+            <button onclick="tradesPagerGo(-1)" id="trades-prev">‹ 上一頁</button>
+            <span id="trades-page-info"></span>
+            <button onclick="tradesPagerGo(1)" id="trades-next">下一頁 ›</button>
+          </div>
+        </div>
+        <table id="trades-table">
+          <thead><tr>
+            <th>日期</th><th>標的</th><th>方向</th>
+            <th>股數</th><th>成交價</th><th>金額(TWD)</th><th>損益</th><th>原因</th>
+          </tr></thead>
+          <tbody><tr><td colspan="8" class="placeholder-text">—</td></tr></tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<!-- ── 個股圖表 Modal ─────────────────────────────────────────────────── -->
+<div id="stock-modal" class="stock-modal-overlay" style="display:none"
+     onclick="if(event.target===this)closeStockModal()">
+  <div class="stock-modal-box">
+    <div class="stock-modal-header">
+      <span id="stock-modal-title" class="stock-modal-sym">—</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <select id="stock-chart-days" onchange="reloadStockChart()"
+                style="font-size:11px;background:var(--bg-surface);color:var(--text-main);border:1px solid var(--border);border-radius:4px;padding:2px 6px">
+          <option value="60">近 60 日</option>
+          <option value="120" selected>近 120 日</option>
+          <option value="240">近 240 日</option>
+        </select>
+        <button class="modal-close-btn" onclick="closeStockModal()">✕</button>
+      </div>
+    </div>
+    <div id="stock-modal-loading" style="text-align:center;padding:50px;color:var(--text-muted)">載入中…</div>
+    <div id="stock-modal-chart" style="height:520px;display:none"></div>
+    <div id="stock-modal-error" style="display:none;color:#ef5350;padding:20px;text-align:center;font-size:12px"></div>
+  </div>
+</div>
+
+<script src="/static/app.js?v=3"></script>
+</body>
+</html>

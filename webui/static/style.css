@@ -1,0 +1,473 @@
+/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-base:    #0d1117;
+  --bg-surface: #161b22;
+  --bg-card:    #21262d;
+  --border:     #30363d;
+  --text-main:  #c9d1d9;
+  --text-muted: #8b949e;
+  --accent:     #58a6ff;
+  --green:      #26a641;
+  --red:        #f85149;
+  --orange:     #e3b341;
+  --purple:     #8957e5;
+  --radius:     6px;
+  --font:       "Segoe UI", system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font);
+  background:  var(--bg-base);
+  color:       var(--text-main);
+  font-size:   13px;
+  min-height:  100vh;
+  display:     flex;
+  flex-direction: column;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo     { font-size: 16px; font-weight: 700; color: var(--accent); }
+.subtitle { font-size: 11px; color: var(--text-muted); margin-left: 8px; }
+
+.header-status {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 12px; color: var(--text-muted);
+}
+
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+.status-dot.running { background: var(--orange); animation: pulse 1s infinite; }
+.status-dot.ok      { background: var(--green); }
+.status-dot.error   { background: var(--red); }
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ── Main Layout ─────────────────────────────────────────────────────────── */
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* ── Upper: Chart + Industry ─────────────────────────────────────────────── */
+.chart-section {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  border-bottom: 1px solid var(--border);
+}
+
+.chart-panel { display: flex; flex-direction: column; }
+
+.chart-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.chart-toolbar-label { font-size: 11px; color: var(--text-muted); }
+.chart-placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  background: var(--bg-base);
+  min-height: 260px;
+}
+
+/* ── Industry Panel ──────────────────────────────────────────────────────── */
+.industry-panel {
+  padding: 12px;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  min-height: 260px;
+}
+
+.panel-title {
+  font-size: 12px; font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.industry-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border);
+}
+.industry-name { flex: 1; color: var(--text-muted); }
+.industry-count { font-size: 10px; color: var(--text-muted); }
+.industry-pnl { font-family: monospace; font-size: 12px; font-weight: 600; }
+.industry-pnl.pos { color: var(--green); }
+.industry-pnl.neg { color: var(--red); }
+
+.empty-state { color: var(--text-muted); font-size: 11px; padding: 8px 0; }
+
+/* ── Lower: Config + Results ─────────────────────────────────────────────── */
+.backtest-section {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  border-bottom: 1px solid var(--border);
+  height: 720px;
+}
+
+.section-sidebar {
+  padding: 12px;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.section-title {
+  font-size: 12px; font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Form ────────────────────────────────────────────────────────────────── */
+.form-group {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
+
+.form-group legend {
+  font-size: 11px; font-weight: 600;
+  color: var(--text-muted);
+  padding: 0 4px;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.form-row label { font-size: 11px; color: var(--text-muted); min-width: 80px; }
+
+.form-row input[type=number],
+.form-row input[type=date],
+.form-row input[type=text],
+.form-row select {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-main);
+  font-size: 12px;
+  padding: 3px 7px;
+  min-width: 0;
+}
+
+.form-row input:focus, .form-row select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.form-actions { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; }
+.form-actions-row { display: flex; gap: 6px; }
+.form-actions-row > button { flex: 1; }
+
+.btn-primary {
+  width: 100%; padding: 8px;
+  background: var(--accent);
+  color: #0d1117;
+  font-weight: 700; font-size: 13px;
+  border: none; border-radius: var(--radius);
+  cursor: pointer; transition: opacity .15s;
+}
+.btn-primary:hover    { opacity: .85; }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-secondary {
+  padding: 7px;
+  background: #30363d;
+  color: var(--text-main);
+  font-weight: 600; font-size: 12px;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer; transition: background .15s;
+}
+.btn-secondary:hover     { background: #3c434b; }
+.btn-secondary:disabled  { opacity: .5; cursor: not-allowed; }
+
+/* ── Results Area ────────────────────────────────────────────────────────── */
+.results-area {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Metrics */
+.metrics-section { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.metric-item {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.metric-label { font-size: 10px; color: var(--text-muted); }
+.metric-value { font-size: 14px; font-weight: 700; }
+.metric-value.pos { color: var(--green); }
+.metric-value.neg { color: var(--red); }
+
+.placeholder-text { color: var(--text-muted); font-size: 12px; padding: 12px; }
+
+/* Holdings */
+.holdings-section { padding: 10px 14px; border-bottom: 1px solid var(--border); flex: 1; overflow-y: auto; }
+.card-title { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { padding: 5px 6px; text-align: right; border-bottom: 1px solid var(--border); }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--text-muted); font-weight: 500; font-size: 10px; text-transform: uppercase; }
+
+/* Equity curve in results */
+.equity-section {
+  padding: 6px 14px;
+  border-top: 1px solid var(--border);
+  max-height: 180px;
+  overflow-y: auto;
+}
+.equity-label { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
+
+/* Trades pager */
+.trades-pager {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.trades-pager button {
+  padding: 2px 8px;
+  font-size: 11px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-main);
+  cursor: pointer;
+}
+.trades-pager button:hover:not(:disabled) { background: #3c434b; }
+.trades-pager button:disabled { opacity: .4; cursor: not-allowed; }
+#trades-page-info { font-size: 11px; color: var(--text-muted); }
+
+/* ── 個股圖表 Modal ───────────────────────────────────────────────────────── */
+.stock-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.75);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stock-modal-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 92%;
+  max-width: 1000px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.stock-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.stock-modal-sym {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.modal-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  line-height: 1;
+}
+.modal-close-btn:hover { background: var(--bg-card); color: var(--text-main); }
+
+/* 可點擊的股票代號 */
+.symbol-link { cursor: pointer; color: var(--accent); }
+.symbol-link:hover { text-decoration: underline dotted; }
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.app-footer {
+  padding: 8px 20px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ── 台股特色條件提示文字 ─────────────────────────────────────────────────── */
+.cond-hint {
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 0 0 4px 28px;
+  line-height: 1.4;
+}
+
+/* ── 績效指標卡 ───────────────────────────────────────────────────────────── */
+.metric-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.metric-card.metric-green .metric-value { color: var(--green); }
+.metric-card.metric-red   .metric-value { color: var(--red); }
+
+/* ── 顏色工具 ─────────────────────────────────────────────────────────────── */
+.green { color: var(--green); }
+.red   { color: var(--red); }
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── Tab Bar ─────────────────────────────────────────────────────────────── */
+.tab-bar {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 3px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 5px 4px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.tab-btn:hover  { background: var(--bg-surface); color: var(--text-main); }
+.tab-btn.active { background: var(--bg-surface); color: var(--accent); }
+
+.tab-panel         { display: none; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto; min-height: 0; padding-right: 4px; }
+.tab-panel.active  { display: flex; }
+
+.form-actions      { flex-shrink: 0; }
+
+/* ── Condition Rows (買進/賣出條件) ─────────────────────────────────────── */
+.cond-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.cond-row:last-child { border-bottom: none; }
+
+.cond-param {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 28px;
+  flex-wrap: wrap;
+}
+.cond-param label { font-size: 10px; color: var(--text-muted); min-width: auto; }
+.cond-param input {
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-main);
+  font-size: 11px;
+  padding: 2px 6px;
+}
+
+/* ── Toggle Switch ───────────────────────────────────────────────────────── */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.toggle-row input[type=checkbox] { display: none; }
+
+.toggle-track {
+  width: 28px; height: 14px;
+  background: var(--border);
+  border-radius: 7px;
+  position: relative;
+  flex-shrink: 0;
+  transition: background .2s;
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  width: 10px; height: 10px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  top: 2px; left: 2px;
+  transition: transform .2s, background .2s;
+}
+.toggle-row input:checked + .toggle-track { background: rgba(88,166,255,.3); }
+.toggle-row input:checked + .toggle-track::after {
+  transform: translateX(14px);
+  background: var(--accent);
+}
+.toggle-label { font-size: 11px; color: var(--text-muted); }

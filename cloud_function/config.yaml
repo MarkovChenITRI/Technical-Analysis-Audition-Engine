@@ -1,0 +1,97 @@
+tradingview:
+  session_id: 3xas32oe1qv01p1uzkh2uicgyowvg1p0
+  watchlist_id: '334914424'
+  expires_at: '2026-09-08'
+line:
+  channel_access_token: aKRtdIDqU8HQ9N/bHaXNOMtbEZAoIctjuyzsOcY+AHTf9cqQh18aMOJoPbx55VOl/qvS3LAB6I3tO/fbRCuL6TsrT08X9kb0IkncE0C/1pdIqQ/Oqi1zuWwUNaNNrFrPbIvxHHt1+ROP5d3EpfasqwdB04t89/1O/w1cDnyilFU=
+  group_id: C09ca18b7360b50eb65697210a41805ad
+finmind:
+  token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoibWFya292LmNoZW4xOTk2IiwiZW1haWwiOiJtYXJrb3YuY2hlbjE5OTZAZ21haWwuY29tIiwidG9rZW5fdmVyc2lvbiI6MH0.XXm4hJP-qB6IHrW9UhAnYRbPk0JY5TxFmjtYGb7VcMo
+backtest:
+  initial_capital: 5000000
+  amount_per_stock: 100000
+  max_positions: 10
+  market: tw
+  start_date: '2025-09-08'
+  rebalance_freq: weekly
+  buy_conditions:
+    sharpe_rank:
+      enabled: true
+      top_n: 15
+    sharpe_threshold:
+      enabled: false
+      threshold: 1
+    sharpe_streak:
+      enabled: false
+      days: 3
+      top_n: 10
+    growth_streak:
+      enabled: false
+      days: 2
+      percentile: 30
+    growth_rank:
+      enabled: false
+      top_n: 7
+    sort_sharpe:
+      enabled: true
+    sort_margin:
+      enabled: false
+      days: 5
+    sort_industry:
+      enabled: false
+      per_industry: 2
+    margin_net_long:
+      enabled: false
+      days: 5
+      min_avg_change: 0
+    no_parabolic:
+      enabled: false
+      lookback: 10
+      max_gain: 0.15
+    industry_rank:
+      enabled: true
+      top_n: 2
+  sell_conditions:
+    sharpe_fail:
+      enabled: true
+      periods: 2
+      top_n: 15
+    growth_fail:
+      enabled: false
+      days: 5
+      threshold: 0
+    not_selected:
+      enabled: false
+      periods: 3
+    drawdown:
+      enabled: true
+      threshold: 0.2
+    weakness:
+      enabled: false
+      rank_k: 20
+      periods: 3
+    margin_collapse:
+      enabled: false
+      days: 3
+      threshold: -0.3
+  rebalance_strategy:
+    type: delayed
+    top_n: 5
+    sharpe_threshold: 0
+    batch_ratio: 0.2
+    concentrate_top_k: 3
+    lead_margin: 0.3
+    hold_top_n: 15
+  end_date: null
+  market_filter:
+    enabled: false
+    indicator: twii_200ma
+    ma_window: 200
+  stop_loss_reentry:
+    enabled: false
+    type: price_recovery
+  fees:
+    tw:
+      buy_rate: 0.0015
+      sell_rate: 0.0045
+      min_fee: 20

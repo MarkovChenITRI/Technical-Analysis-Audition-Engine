@@ -1,0 +1,78 @@
+name: 部署至 Google Cloud Function
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cloud_function/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy technical-analysis-audition-engine
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 取得原始碼
+        uses: actions/checkout@v4
+
+      - name: 驗證 GCP 身分
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+
+      - name: 設定 gcloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: 部署至 Cloud Function
+        run: |
+          gcloud functions deploy technical-analysis-audition-engine \
+            --gen2 \
+            --runtime python312 \
+            --region asia-east1 \
+            --entry-point hello_http \
+            --source cloud_function/ \
+            --trigger-http \
+            --allow-unauthenticated \
+            --memory 1Gi \
+            --timeout 540s \
+            --project ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: 建立或更新 Cloud Scheduler
+        run: |
+          PROJECT=${{ secrets.GCP_PROJECT_ID }}
+
+          # 取得剛部署的 GCF Trigger URL
+          GCF_URL=$(gcloud functions describe technical-analysis-audition-engine \
+            --gen2 \
+            --region asia-east1 \
+            --project "$PROJECT" \
+            --format='value(serviceConfig.uri)')
+
+          SCHEDULER_BODY='{"notify":{"line":true}}'
+
+          # 若 Scheduler job 已存在則更新，否則建立（冪等）
+          if gcloud scheduler jobs describe technical-analysis-audition-engine \
+               --location asia-east1 \
+               --project "$PROJECT" \
+               2>/dev/null; then
+            gcloud scheduler jobs update http technical-analysis-audition-engine \
+              --location asia-east1 \
+              --schedule "0 9 * * 1-5" \
+              --uri "$GCF_URL" \
+              --http-method POST \
+              --message-body "$SCHEDULER_BODY" \
+              --update-headers "Content-Type=application/json" \
+              --time-zone "Asia/Taipei" \
+              --project "$PROJECT"
+          else
+            gcloud scheduler jobs create http technical-analysis-audition-engine \
+              --location asia-east1 \
+              --schedule "0 9 * * 1-5" \
+              --uri "$GCF_URL" \
+              --http-method POST \
+              --message-body "$SCHEDULER_BODY" \
+              --headers "Content-Type=application/json" \
+              --time-zone "Asia/Taipei" \
+              --project "$PROJECT"
+          fi
