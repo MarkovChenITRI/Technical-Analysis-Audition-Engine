@@ -44,7 +44,7 @@ def format_line_message(result, current_holdings: list, start_dt, end_dt) -> str
     summary = result.to_dict()
     SEP = '─' * 12
     lines = [
-        f'🇹🇼 {end_dt.strftime("%Y-%m-%d")} 台股每日建議',
+        f'🇹🇼 {end_dt.strftime("%Y-%m-%d")} 每日建議(台)',
         f'設立日：{start_dt.strftime("%Y-%m-%d")}',
         SEP,
         '【系統績效】',
@@ -63,13 +63,13 @@ def format_line_message(result, current_holdings: list, start_dt, end_dt) -> str
         for t in recent:
             icon = '🟢' if t['type'] == 'buy' else '🔴'
             action = '買入' if t['type'] == 'buy' else '賣出'
-            lines.append(f'{icon} {t["date"][5:]} {action} {t["symbol"]}')
+            lines.append(f'{icon} {t["date"][5:]} {action} {t["name"]}')
     else:
         lines.append('（無訊號）')
     lines += [SEP, '【現有倉位】']
     if current_holdings:
         for h in sorted(current_holdings, key=lambda x: x['pnl_pct'], reverse=True):
-            lines.append(f'🇹🇼 {h["symbol"]:<8} {h["pnl_pct"]:+.1%}')
+            lines.append(f'🇹🇼 {h["name"]:<8} {h["pnl_pct"]:+.1%}')
     else:
         lines.append('（無持倉）')
     return '\n'.join(lines)
