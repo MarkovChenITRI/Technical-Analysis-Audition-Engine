@@ -5,6 +5,7 @@ tradingview:
 line:
   channel_access_token: aKRtdIDqU8HQ9N/bHaXNOMtbEZAoIctjuyzsOcY+AHTf9cqQh18aMOJoPbx55VOl/qvS3LAB6I3tO/fbRCuL6TsrT08X9kb0IkncE0C/1pdIqQ/Oqi1zuWwUNaNNrFrPbIvxHHt1+ROP5d3EpfasqwdB04t89/1O/w1cDnyilFU=
   group_id: C09ca18b7360b50eb65697210a41805ad
+  quiet_days_without_signal: 3
 finmind:
   token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoibWFya292LmNoZW4xOTk2IiwiZW1haWwiOiJtYXJrb3YuY2hlbjE5OTZAZ21haWwuY29tIiwidG9rZW5fdmVyc2lvbiI6MH0.XXm4hJP-qB6IHrW9UhAnYRbPk0JY5TxFmjtYGb7VcMo
 backtest:

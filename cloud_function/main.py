@@ -19,7 +19,7 @@ from typing import Optional, Tuple
 import functions_framework
 
 from data import (
-    TPE_TZ, TradingViewSessionExpired, _load_session_meta,
+    TPE_TZ, TradingViewSessionExpired, _load_session_meta, _load_line_quiet_days,
     push_line_message, push_session_expired_alert,
     push_session_expiring_soon_alert, push_error_alert,
 )
@@ -40,7 +40,9 @@ logger = logging.getLogger('hello_http')
 # =============================================================================
 # LINE 訊息格式化（台股版）
 # =============================================================================
-def format_line_message(result, current_holdings: list, start_dt, end_dt) -> str:
+def format_line_message(
+    result, current_holdings: list, start_dt, end_dt, recent_trades: list, quiet_days: int,
+) -> str:
     summary = result.to_dict()
     SEP = '─' * 12
     lines = [
@@ -55,17 +57,12 @@ def format_line_message(result, current_holdings: list, start_dt, end_dt) -> str
         f'勝率    {summary["win_rate"]}',
         f'交易    {summary["total_trades"]} 筆',
         SEP,
-        '【交易訊號（近3日）】',
+        f'【交易訊號（近{quiet_days}日）】',
     ]
-    cutoff = (end_dt - timedelta(days=3)).strftime('%Y-%m-%d')
-    recent = [t for t in result.trades if t['date'] >= cutoff]
-    if recent:
-        for t in recent:
-            icon = '🟢' if t['type'] == 'buy' else '🔴'
-            action = '買入' if t['type'] == 'buy' else '賣出'
-            lines.append(f'{icon} {t["date"][5:]} {action} {t["name"]}')
-    else:
-        lines.append('（無訊號）')
+    for t in recent_trades:
+        icon = '🟢' if t['type'] == 'buy' else '🔴'
+        action = '買入' if t['type'] == 'buy' else '賣出'
+        lines.append(f'{icon} {t["date"][5:]} {action} {t["name"]}')
     lines += [SEP, '【現有倉位】']
     if current_holdings:
         for h in sorted(current_holdings, key=lambda x: x['pnl_pct'], reverse=True):
@@ -167,9 +164,17 @@ def hello_http(request):
     # LINE 推播（只在 Cloud Scheduler 傳 "line": true 時執行）
     notifications = {'line': {'sent': False}}
     if line_enabled:
-        msg = format_line_message(result, current_holdings, start_dt, end_dt)
-        line_result = push_line_message(msg)
-        notifications['line'] = line_result
+        quiet_days = _load_line_quiet_days()
+        cutoff = (end_dt - timedelta(days=quiet_days)).strftime('%Y-%m-%d')
+        recent_trades = [t for t in result.trades if t['date'] >= cutoff]
+
+        if recent_trades:
+            msg = format_line_message(result, current_holdings, start_dt, end_dt, recent_trades, quiet_days)
+            notifications['line'] = push_line_message(msg)
+        else:
+            reason = f'連續 {quiet_days} 天無交易訊號，跳過推播'
+            notifications['line'] = {'sent': False, 'reason': reason}
+            logger.info(reason)
 
         # session 到期預警（≤7 天才推，附在每日排程之後，避免本地測試/demo.py 誤推）
         expires_at, _, _ = _load_session_meta()

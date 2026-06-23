@@ -899,6 +899,17 @@ def _load_line_credentials() -> tuple[str, str]:
         return '', ''
 
 
+def _load_line_quiet_days() -> int:
+    """從 config.yaml 讀取「連續無交易訊號則跳過推播」的天數門檻。"""
+    try:
+        with open(CONFIG_FILE, encoding='utf-8') as f:
+            cfg = yaml.safe_load(f) or {}
+        return int(cfg.get('line', {}).get('quiet_days_without_signal', 3))
+    except Exception as e:
+        logger.warning('無法讀取 LINE 靜默天數設定 (%s): %s', CONFIG_FILE, e)
+        return 3
+
+
 def push_line_message(text: str) -> dict:
     token, group_id = _load_line_credentials()
     if not (token and group_id):
